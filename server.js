@@ -4,6 +4,9 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const ejs = require('ejs');
 const ejsMate = require('ejs-mate');
+const session = require('express-session');
+const cookieParser = require("cookie-parser");
+const flash = require("express-flash");
 
 const User = require('./models/user');
 
@@ -19,31 +22,25 @@ mongoose.connect('mongodb://root:12345@ds227035.mlab.com:27035/ecommerce',functi
 });
 
 //Middleware
+app.use(express.static(__dirname + '/public'));
 app.use(morgan('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended : true}));
+app.use(cookieParser());
+app.use(session({
+    resave : true,
+    saveUninitialized : true,
+    secret : "munu1993"
+}));
+app.use(flash());
+
 app.engine('ejs',ejsMate);
 app.set('view engine','ejs');
 
-app.post('/create-user',function(req,res,next){
-    var user = new User();
-    user.profile.name = req.body.name;
-    user.password = req.body.password;
-    user.email = req.body.email;
-
-    user.save(function(err){
-        if(err) return next(err);
-        res.json("Successfully added a new user");
-    });
-});
-
-app.get('/',function(req,res){
-    res.render("home");
-});
-
-app.get('/about',function(req,res){
-    res.render("about");
-});
+const mainRoutes = require('./routes/main');
+const userRoutes = require("./routes/user");
+app.use(mainRoutes);
+app.use(userRoutes);
 
 app.listen(4000,function(err){
     if(err) throw err;
